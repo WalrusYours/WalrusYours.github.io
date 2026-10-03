@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WALRUS: recommendations your users can tune</title>
+  <meta name="description" content="WALRUS is a content-agnostic, schema-driven recommendation engine. Platforms describe their data in YAML; end users re-weight the ranking with a few knobs, and every result is explained.">
+  <meta name="theme-color" content="#050505">
+  <meta property="og:title" content="WALRUS: recommendations your users can tune">
+  <meta property="og:description" content="A schema-driven recommendation engine with user-adjustable ranking and per-item explanations.">
+  <meta property="og:image" content="assets/walrus.png">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/walrus.png" alt="">WALRUS</a>
+    <nav class="site" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#why">Why</a>
+      <a href="#schema">Schema</a>
+      <a class="keep" href="https://github.com/WalrusYours/WalrusCore">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <img class="mark" src="assets/walrus.png" alt="WALRUS logo">
+      <p class="eyebrow">Weight And Liberty-based Recommendation Utility System</p>
+      <h1>Recommendations <span>your users can tune.</span></h1>
+      <p class="lead">
+        WALRUS is a recommendation engine you adapt to any content with a YAML schema.
+        The platform decides what can be weighted; the end user decides how much,
+        and every result says why it was shown.
+      </p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/WalrusYours/WalrusCore">View on GitHub</a>
+        <a class="btn" href="#how">How it works</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2>Three steps to a tunable feed</h2>
+      <div class="grid">
+        <div>
+          <span class="step-num">01</span>
+          <h3>Describe your data</h3>
+          <p>Push a <code>schema.yml</code> with your entities, interactions, signals, knobs and hard constraints. No code change, no rebuild.</p>
+        </div>
+        <div>
+          <span class="step-num">02</span>
+          <h3>Send events</h3>
+          <p>Your backend ingests entities and interactions through the API. WALRUS never reads your database.</p>
+        </div>
+        <div>
+          <span class="step-num">03</span>
+          <h3>Serve a ranked feed</h3>
+          <p>Ask for <code>recommend(user, knobs)</code> and get ids, scores and the reasons behind them. Your app hydrates and renders.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="wrap cols">
+      <div>
+        <p class="eyebrow">Why WALRUS</p>
+        <h2>Control and explanation, built in</h2>
+        <p>Most engines optimise engagement with weights only the operator can see. WALRUS exposes a few curated knobs to the end user and explains each result with the same signal breakdown that produced it.</p>
+        <p>That also lines up with Article 27 of the EU Digital Services Act, which asks large platforms to explain their recommender parameters and let users influence them.</p>
+      </div>
+      <ul class="plain">
+        <li><strong>Two-layer control.</strong> The author defines the signals; the user moves the knobs.</li>
+        <li><strong>Instant re-ranking.</strong> Candidates do not depend on weights, so a slider change re-scores in memory.</li>
+        <li><strong>Explainable.</strong> Every item carries a per-signal breakdown.</li>
+        <li><strong>Hard constraints.</strong> Exclusions apply before scoring and no knob can override them.</li>
+        <li><strong>Content-agnostic.</strong> Feeds, marketplaces and streaming from one engine.</li>
+        <li><strong>Multi-tenant.</strong> Self-host it or run it as a hosted API.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="schema">
+    <div class="wrap">
+      <p class="eyebrow">The contract</p>
+      <h2>The schema is the integration</h2>
+      <p class="lead">YAML is the only format. A trimmed example:</p>
+<pre><code><span class="c"># schema.yml</span>
+version: 1
+
+entities:
+  user:
+    key: id
+    attributes:
+      city:     { type: categorical }
+  listing:
+    key: id
+    attributes:
+      category: { type: categorical }
+      price:    { type: float }
+      tags:     { type: set, of: string }
+      status:   { type: categorical }
+<span class="c"># ...interactions, signals, knobs and constraints follow</span></code></pre>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="wrap">
+      <p class="eyebrow">Get started</p>
+      <h2>Run it, then push a schema</h2>
+      <p>WALRUS needs Neo4j and an admin key. The repository has the engine, the SDK and the integration guide.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/WalrusYours/WalrusCore">WalrusCore</a>
+        <a class="btn" href="https://github.com/WalrusYours/WalrusCore#readme">Read the docs</a>
+        <a class="btn" href="https://github.com/WalrusYours/WalrusCore/issues">Issues</a>
+        <a class="btn" href="https://github.com/WalrusYours">WalrusYours on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>WALRUS, a bachelor thesis project at the Technical University of Moldova.</span>
+    <span class="links">
+      <a href="https://github.com/WalrusYours/WalrusCore">Source</a>
+      <a href="https://github.com/WalrusYours/WalrusCore/releases">Releases</a>
+      <a href="https://github.com/WalrusYours">Organisation</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>
