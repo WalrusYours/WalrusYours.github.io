@@ -5,7 +5,8 @@ A static site (plain HTML and CSS, no build) for GitHub Pages.
 ```
 index.html   the page
 style.css    near-black minimal theme
-assets/      logo and favicon (copied from walrus-dashboard-client/public)
+assets/      logo, favicon, og.png (social card)
+og/og.html   source of assets/og.png; regenerate with headless Chrome (command inside)
 .nojekyll    tell Pages not to run Jekyll
 .github/workflows/pages.yml   deploys on push to main
 ```
