@@ -48,6 +48,7 @@
     <a href="schema.html#signals">Signals</a>
     <a href="schema.html#knobs">Knobs and presets</a>
     <a href="schema.html#constraints">Constraints</a>
+    <a href="schema.html#examples">Examples</a>
     <a href="schema.html#pushing">Pushing a schema</a>
     <h4>API</h4>
     <a href="api.html">Overview</a>
@@ -269,11 +270,33 @@ presets:
     <p>
       The sections above are enough for a feed. A schema can also declare several <strong>recommenders</strong> with their own
       seeds (an item, a playlist or basket, a session, a group), request <strong>context</strong>, business <strong>rules</strong>
-      such as per-seller caps, and <strong>computed</strong> attributes. The
-      <a href="https://github.com/WalrusYours/WalrusCore/tree/main/docs/schema/schema-examples">example schemas</a>
-      cover them: a marketplace, music streaming, a playlist recommender, news, jobs, courses, film, a social network, local places and dating.
-      Copy the closest one, rename the entities and attributes to match your data, and push it.
+      such as per-seller caps, and <strong>computed</strong> attributes. The examples below cover them.
     </p>
+
+    <h2 id="examples">Examples</h2>
+    <p>
+      Thirteen complete schemas, one per kind of platform. Copy the closest one, rename the entities and attributes to match your
+      data, and push it. Each file is checked by the engine's test suite, so they stay valid as the schema language evolves.
+      <a href="https://github.com/WalrusYours/WalrusCore/tree/main/docs/schema/schema-examples">Browse them all on GitHub.</a>
+    </p>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Example</th><th>Platform</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/feed.yml"><code>feed.yml</code></a></td><td>Social feed</td><td>The smallest useful schema: views, likes, comments, three knobs.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/marketplace.yml"><code>marketplace.yml</code></a></td><td>Second-hand marketplace</td><td><code>$user.</code> references, a proximity signal, a blocked-sellers constraint, price similarity.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/spotify.yml"><code>spotify.yml</code></a></td><td>Music streaming</td><td>Audio-feature similarity, negative interactions (skip), a time-window constraint, and a "you might also add" recommender for a playlist.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/playlist.yml"><code>playlist.yml</code></a></td><td>"You might also add"</td><td>The smallest schema for a recommender seeded with a list of items, written step by step: co-listing, similarity terms, a one-per-artist rule, an empty-playlist fallback.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/shop.yml"><code>shop.yml</code></a></td><td>Marketplace, with recommenders</td><td>After a purchase: fewer substitutes, what goes with it, the same kind again when due. "Not interested" reasons, sponsored slots, seller caps, an A/B test and a holdout.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/shelf.yml"><code>shelf.yml</code></a></td><td>Books and films</td><td>Two recommendable types, taste across them, a mixed list, up next, a watch party, people you may know.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/news.yml"><code>news.yml</code></a></td><td>News reader</td><td><code>computed</code> attributes (reading time), <code>locked</code> values, a knob that widens topics.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/jobs.yml"><code>jobs.yml</code></a></td><td>Job board</td><td>A computed <code>skill_count</code>, and <code>apply</code> and <code>hide</code> interactions that exclude.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/courses.yml"><code>courses.yml</code></a></td><td>Online learning</td><td>Excluding completed courses and recently dropped ones.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/movies.yml"><code>movies.yml</code></a></td><td>Film streaming</td><td>Star ratings, the platform's own model blended in, "more from this director", an age limit from a sensitive attribute, and a taste learned from behaviour (<code>embedding</code>).</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/social.yml"><code>social.yml</code></a></td><td>Social network</td><td>A follow graph: a feed of only the accounts you follow, one of those you do not, who to follow.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/local.yml"><code>local.yml</code></a></td><td>Places near you</td><td><code>geo</code> points, nearer is better, a radius that is a hard filter, a saved home place, a budget in the request.</td></tr>
+        <tr><td><a href="https://github.com/WalrusYours/WalrusCore/blob/main/docs/schema/schema-examples/dating.yml"><code>dating.yml</code></a></td><td>Dating</td><td>Mutual preferences as filters, sensitive attributes that are never explained, "they already liked you" as supplied scores. Two-sided matching is planned in the engine.</td></tr>
+      </tbody>
+    </table></div>
 
     <h2 id="pushing">Pushing a schema</h2>
     <p>The schema is pushed to WALRUS and never pulled. Every push goes through the same steps:</p>
