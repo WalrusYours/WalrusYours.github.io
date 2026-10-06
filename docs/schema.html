@@ -18,6 +18,7 @@
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/walrus.png">
   <link rel="stylesheet" href="../style.css">
+  <script src="../assets/highlight.js" defer></script>
 </head>
 <body>
 
@@ -78,7 +79,7 @@
 
     <h2 id="anatomy">Anatomy</h2>
     <p>A schema has up to eight top-level keys. Only the first five are always needed.</p>
-<pre><code>version: 1
+<pre><code class="language-yaml">version: 1
 entities:     { ... }   <span class="c"># what exists</span>
 interactions: { ... }   <span class="c"># what users do</span>
 similarity:   { ... }   <span class="c"># how things are compared</span>
@@ -102,7 +103,7 @@ recommendable: post     <span class="c"># which entity is ranked</span></code></
       Declares what exists and which attributes you will send. Anything not declared is rejected at
       ingest. An entity named <code>user</code> is required, because constraints and signals refer to <code>$user</code>.
     </p>
-<pre><code>entities:
+<pre><code class="language-yaml">entities:
   post:
     key: id
     attributes:
@@ -129,7 +130,7 @@ recommendable: post     <span class="c"># which entity is ranked</span></code></
       Turns events into weighted edges that fade over time. A <code>like</code> is a stronger statement than a
       <code>view</code>; a <code>dislike</code> is a negative one.
     </p>
-<pre><code>interactions:
+<pre><code class="language-yaml">interactions:
   view: { weight: 1.0, value: seconds, transform: log1p, half_life: 3d }
   like: { weight: 4.0, half_life: 30d }</code></pre>
     <div class="table-scroll"><table>
@@ -150,7 +151,7 @@ recommendable: post     <span class="c"># which entity is ranked</span></code></
       Defines how two items, or two users, are compared. It is a map from entity name to a list of terms;
       the scores of the terms are combined using their weights. The neighbour signals read the result.
     </p>
-<pre><code>similarity:
+<pre><code class="language-yaml">similarity:
   post:
     - { on: topic, metric: equals,  weight: 0.5 }
     - { on: tags,  metric: jaccard, weight: 0.5 }
@@ -172,7 +173,7 @@ recommendable: post     <span class="c"># which entity is ranked</span></code></
       the current weights. The <code>type</code> picks a built-in behaviour and the other keys configure it.
       <code>default</code> is the weight when the user has touched no knob.
     </p>
-<pre><code>signals:
+<pre><code class="language-yaml">signals:
   content: { type: item_neighbors, default: 0.5 }
   recency: { type: age_decay, default: 0.3, on: created_at, half_life: 2d }</code></pre>
     <div class="table-scroll"><table>
@@ -202,7 +203,7 @@ recommendable: post     <span class="c"># which entity is ranked</span></code></
       Knobs are the only controls the end user ever sees. Each one is a projection onto one or more signal
       weights, so you decide what can be weighted and the user decides how much.
     </p>
-<pre><code>knobs:
+<pre><code class="language-yaml">knobs:
   - id: explore
     label: "Safe picks  &lt;-&gt;  Surprise me"
     range: [0, 1]
@@ -240,7 +241,7 @@ presets:
       Hard rules, applied before scoring. They are never weighted, and no knob can override them. Each is a
       <code>require</code> or an <code>exclude</code> with one condition:
     </p>
-<pre><code>constraints:
+<pre><code class="language-yaml">constraints:
   - require: { attribute: status, equals: active }
   - exclude: { interacted: [dislike] }
   - exclude: { interacted: [skip], count_gte: 3, within: 30d }

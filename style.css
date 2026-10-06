@@ -221,6 +221,35 @@ pre .c {
   color: var(--faint);
 }
 
+/* YAML highlighting (assets/highlight.js) */
+:root {
+  --hl-key: #8fb0d8;
+  --hl-str: #f08a96;
+  --hl-num: #d9b77a;
+  --hl-bool: #b79ae0;
+  --hl-punct: #6b6b6b;
+  --hl-comment: #707070;
+}
+pre .y-k {
+  color: var(--hl-key);
+}
+pre .y-s {
+  color: var(--hl-str);
+}
+pre .y-n {
+  color: var(--hl-num);
+}
+pre .y-b {
+  color: var(--hl-bool);
+}
+pre .y-p {
+  color: var(--hl-punct);
+}
+pre .y-c {
+  color: var(--hl-comment);
+  font-style: italic;
+}
+
 /* Two columns */
 .cols {
   display: grid;
