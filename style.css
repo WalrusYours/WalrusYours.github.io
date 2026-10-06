@@ -332,7 +332,9 @@ footer .links {
   color: var(--ink);
   border-left-color: var(--faint);
 }
-.docs-nav a[aria-current="page"] {
+/* Without JavaScript the page link is marked; with it (.spy) the marker follows the section. */
+.docs-nav:not(.spy) a[aria-current="page"],
+.docs-nav a.active {
   color: var(--ink);
   border-left-color: var(--accent);
 }
