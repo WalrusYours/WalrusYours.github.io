@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API · WALRUS docs</title>
+  <meta name="description" content="The WALRUS HTTP API: push a schema, send entities and events, get ranked recommendations with knobs, and explain any result.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <link rel="canonical" href="https://walrusyours.github.io/docs/api.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="WALRUS">
+  <meta property="og:title" content="API · WALRUS docs">
+  <meta property="og:description" content="Push a schema, send entities and events, get ranked recommendations with knobs, and explain any result.">
+  <meta property="og:url" content="https://walrusyours.github.io/docs/api.html">
+  <meta property="og:image" content="https://walrusyours.github.io/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/walrus.png">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/walrus.png" alt="">WALRUS</a>
+    <nav class="site" aria-label="Main">
+      <a href="../#how">How it works</a>
+      <a href="../#why">Why</a>
+      <a class="keep" href="./" aria-current="page">Docs</a>
+      <a class="keep" href="https://github.com/WalrusYours/WalrusCore">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap docs">
+
+  <nav class="docs-nav" aria-label="Documentation">
+    <h4>Get started</h4>
+    <a href="./">Introduction and install</a>
+    <a href="./#quickstart">Quickstart</a>
+    <h4>Schema</h4>
+    <a href="schema.html">What a schema is</a>
+    <a href="schema.html#entities">Entities</a>
+    <a href="schema.html#interactions">Interactions</a>
+    <a href="schema.html#similarity">Similarity</a>
+    <a href="schema.html#signals">Signals</a>
+    <a href="schema.html#knobs">Knobs and presets</a>
+    <a href="schema.html#constraints">Constraints</a>
+    <a href="schema.html#pushing">Pushing a schema</a>
+    <h4>API</h4>
+    <a href="api.html" aria-current="page">Overview</a>
+    <a href="api.html#entities">Entities and events</a>
+    <a href="api.html#recommend">Recommend</a>
+    <a href="api.html#explain">Explain</a>
+    <a href="api.html#errors">Errors</a>
+    <a href="api.html#status">What is built</a>
+  </nav>
+
+  <main class="doc" id="top">
+
+    <p class="eyebrow">API</p>
+    <h1>API reference</h1>
+    <p class="lead">
+      Everything is under <code>/v1</code> and JSON, except the schema, which is YAML. <code>/v1</code> only ever
+      gains things: nothing you build against it is removed.
+    </p>
+
+    <h2 id="overview">Overview</h2>
+    <p>
+      Send <code>Authorization: Bearer &lt;admin key&gt;</code>, the key the engine was started with in
+      <code>WALRUS_ADMIN_KEY</code>. Only the health endpoints are open. Scoped keys and per-tenant keys are not built yet.
+      Call WALRUS from your backend or CI, never from a browser.
+    </p>
+    <p>Errors always have one shape:</p>
+    <pre><code>{ "error": { "code": "validation_error", "message": "unknown knob \"nope\"" } }</code></pre>
+
+    <div class="table-scroll"><table>
+      <thead><tr><th>Method and path</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /health</code>, <code>GET /v1/health</code></td><td>Liveness: <code>status</code>, <code>version</code>, <code>instance_id</code>, <code>instance_name</code>. No key.</td></tr>
+        <tr><td><code>PUT /v1/schema</code></td><td>Push the YAML schema as the request body. <code>?dry_run=true</code> validates and returns the diff without applying; <code>?confirm_breaking=true</code> applies a breaking change. 200 applied, 400 with the path of every problem, 409 when breaking and unconfirmed. An accepted schema can return <code>warnings</code>: what it asks for that the engine does not do yet.</td></tr>
+        <tr><td><code>GET /v1/schema</code></td><td>The active schema: <code>yaml</code>, <code>version</code>, <code>hash</code>. 404 before the first push.</td></tr>
+        <tr><td><code>GET /v1/schema/history</code></td><td>Every pushed version.</td></tr>
+        <tr><td><code>POST /v1/entities</code></td><td>Up to 1000 entities (items, users...). Each is checked against the schema; bad ones are listed in <code>rejected</code> and the rest are stored.</td></tr>
+        <tr><td><code>PUT /v1/entities/{type}/{id}</code></td><td>Create or replace one entity: <code>{"attributes": {...}}</code>. 201 when new, 200 when replaced, 400 with the reason when it breaks the schema.</td></tr>
+        <tr><td><code>GET /v1/entities</code>, <code>GET /v1/entities/{type}/{id}</code></td><td>How many entities of each type are stored, and one entity back.</td></tr>
+        <tr><td><code>POST /v1/import</code></td><td>Load a whole catalogue as JSON Lines, one <code>{"entity", "id", "attributes"}</code> per line. Reports the first 100 bad lines by number.</td></tr>
+        <tr><td><code>POST /v1/interactions</code></td><td>Up to 1000 events, checked against the schema's <code>interactions</code>. <code>GET /v1/interactions</code> counts them by type.</td></tr>
+        <tr><td><code>GET /v1/recommend/{user}</code></td><td>The shorthand: the implicit <code>default</code> recommender for a user. Takes <code>?limit=</code>, <code>?preset=</code> and <code>?knobs.&lt;id&gt;=&lt;number&gt;</code>.</td></tr>
+        <tr><td><code>POST /v1/recommend/{user}</code></td><td>The same, with a JSON body (for example <code>exclude</code>).</td></tr>
+        <tr><td><code>POST /v1/recommenders/{recommender}/recommend</code></td><td>Recommend with a recommender the schema declares.</td></tr>
+        <tr><td><code>GET /v1/recommendations/{rec_id}/explain/{item}</code></td><td>Why one item is where it is in one earlier list.</td></tr>
+        <tr><td><code>POST /v1/models/train</code>, <code>GET /v1/models</code></td><td>Train the learned-taste models in the background (202, 409 if a run is going), and see each model against the schema and the last run.</td></tr>
+        <tr><td><code>POST</code>, <code>GET</code>, <code>DELETE /v1/admin/session</code></td><td>Sign in with <code>{"key": "..."}</code> and get a short-lived HttpOnly cookie, check it, sign out. Used by the dashboard so the key is never kept in a browser.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="entities">Entities and events</h2>
+    <h3>Entities</h3>
+    <p>
+      Entities are checked against the pushed schema: the type and every attribute must be declared, each value must have
+      the declared type (and range), and every attribute that is not <code>optional</code> must be present. Sending the same
+      <code>type</code> and <code>id</code> again replaces the entity, so loads can be repeated.
+    </p>
+    <pre><code>POST /v1/entities
+
+{ "entities": [
+  { "entity": "track", "id": "back_in_black", "attributes": { "energy": 0.92, "genres": ["rock"] } }
+] }</code></pre>
+    <pre><code>{ "accepted": 1, "rejected": [
+  { "index": 3, "entity": "track", "id": "x", "error": "attribute \"energy\": 1.5 is outside the range [0, 1]" }
+] }</code></pre>
+    <p>
+      To load a whole catalogue, <code>POST /v1/import</code> takes JSON Lines, one entity per line.
+      The import is idempotent: running it again with the same ids updates rather than duplicates.
+    </p>
+
+    <h3>Interactions</h3>
+    <p>
+      Send every event type you declared in the schema, and nothing else. Undeclared types and fields are rejected, per event,
+      without failing the batch.
+    </p>
+    <pre><code>POST /v1/interactions
+
+{ "interactions": [
+  { "user": "u_1", "type": "view", "target": "p_1", "ts": "2026-10-05T09:58:00Z", "value": 42 },
+  { "user": "u_1", "type": "like", "target": "p_1", "ts": "2026-10-05T10:00:00Z" }
+] }</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>user</code>, <code>target</code></td><td>The ids of the user and of the entity acted on.</td></tr>
+        <tr><td><code>type</code></td><td>One of the schema's <code>interactions</code>.</td></tr>
+        <tr><td><code>ts</code></td><td>When the event <em>happened</em>, not when you send it. Decay is computed from it.</td></tr>
+        <tr><td><code>value</code></td><td>The number the event carries, when the schema declares <code>value:</code> for it.</td></tr>
+        <tr><td><code>fields</code></td><td>Extra values, only those the interaction declares under <code>fields:</code>.</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      Do not call WALRUS from request handlers synchronously. Forward events in batches from a queue or an analytics hook;
+      a few seconds of lag does not change recommendations. If WALRUS is down, buffer and retry. Send item creates, updates and
+      status changes too, or new items never enter the candidate pool and constraints see stale data.
+    </p>
+
+    <h2 id="recommend">Recommend</h2>
+    <p>
+      For a schema with no <code>recommenders</code>, <code>GET /v1/recommend/{user}</code> is all you need. A schema that declares
+      its own recommenders names the one to run in the path. The schema decides what a recommender takes:
+      <code>seed:</code> is one of <code>user</code>, <code>item</code>, <code>items</code>, <code>session</code>, <code>users</code> or
+      <code>none</code>, and the request carries exactly that field.
+    </p>
+    <pre><code>POST /v1/recommenders/playlist_add/recommend
+Authorization: Bearer &lt;admin key&gt;
+
+{
+  "items": ["back_in_black", "thunderstruck", "enter_sandman"],
+  "limit": 5,
+  "knobs": { "vibe_vs_branch_out": 1 },
+  "explain": true
+}</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>user</code>, <code>item</code>, <code>items</code>, <code>session</code>, <code>users</code></td><td>The seed. Only the one the recommender's <code>seed:</code> names is accepted, otherwise 400 <code>seed_mismatch</code>.</td></tr>
+        <tr><td><code>context</code></td><td>Values for the schema's <code>context</code> block (device, time of day...). Unknown fields are rejected; <code>hour</code>, <code>weekday</code> and <code>month</code> are filled in by the engine.</td></tr>
+        <tr><td><code>limit</code></td><td>Capped by the recommender's <code>limit.max</code>; defaults to <code>limit.default</code> (30 and 200 when the schema says nothing).</td></tr>
+        <tr><td><code>exclude</code></td><td>Item ids to leave out. Pagination is stateless: send the ids already shown.</td></tr>
+        <tr><td><code>knobs</code></td><td>The end user's values by knob id. Only knobs the recommender offers; others are 400. They apply to this request and are not saved.</td></tr>
+        <tr><td><code>preset</code></td><td>A named preset from the schema.</td></tr>
+        <tr><td><code>explain</code></td><td><code>true</code> adds a one-line reason to each item.</td></tr>
+        <tr><td><code>scores</code></td><td>Per-item scores your platform supplies for signals of type <code>provided</code>.</td></tr>
+      </tbody>
+    </table></div>
+<pre><code>{
+  "recommender": "playlist_add",
+  "used": "playlist_add",
+  "rec_id": "rec_1a7751f9b1bde656",
+  "items": [
+    { "id": "paranoid", "type": "track", "score": 0.678,
+      "reason": "Often added to playlists with Back in Black · Shares rock and hard rock with Thunderstruck" }
+  ],
+  "weights": { "co_listed": 0.4, "sounds_like": 0.0, "exploration": 0.3 },
+  "knobs": { "vibe_vs_branch_out": 1 },
+  "experiment": { "id": "trend_weight", "variant": "control" },
+  "candidates_considered": 13,
+  "took_ms": 1.2
+}</code></pre>
+    <ul>
+      <li><code>used</code> differs from <code>recommender</code> when a fallback answered, for example an empty playlist falling back to one that reads its title.</li>
+      <li><code>weights</code> are the final numbers after the schema's defaults, expressions, the experiment variant and the user's knobs, so your UI can show exactly what was applied.</li>
+      <li><code>experiment</code> is present when the user is in a running experiment, and <code>holdout: true</code> when they are in the holdout.</li>
+      <li><code>rec_id</code> names this exact list for one minute. Keep it if you want to explain the list.</li>
+    </ul>
+    <p>
+      Hydrate the returned ids from your own database, as you already do. If WALRUS errors or times out, serve your previous
+      query (newest, most popular). Never let a feed be empty because the sidecar is unavailable.
+    </p>
+
+    <h3>Knobs in your UI</h3>
+    <ul>
+      <li>Render each knob as a slider with the two ends labelled exactly as the schema's <code>label</code> reads. Never show signal names or weights.</li>
+      <li>Put presets as buttons above the sliders. Moving a slider deselects the preset.</li>
+      <li>Re-fetch the feed on every slider change with <code>knobs</code> in the request. The re-score takes a few milliseconds, so the feed should visibly reorder while the user drags.</li>
+      <li>Put the panel one tap from the feed. A control nobody finds is the same as no control.</li>
+    </ul>
+
+    <h2 id="explain">Explain</h2>
+    <p>
+      <code>GET /v1/recommendations/{rec_id}/explain/{item}</code> answers from the stored list, not a recomputation, so the
+      breakdown is the one that produced the score and always adds up to it. Each signal that contributed says in words what it
+      found, using the actual items, genres and numbers involved. The one-line <code>reason</code> in a recommend response joins
+      the two strongest, the second only when it carries real weight.
+    </p>
+<pre><code>{
+  "rec_id": "rec_1a7751f9b1bde656", "item": "paranoid", "position": 1, "score": 0.678,
+  "breakdown": [
+    { "signal": "co_listed",   "value": 0.267, "because": "Often added to playlists with Back in Black" },
+    { "signal": "sounds_like", "value": 0.218, "because": "Close to Thunderstruck in energy and valence" },
+    { "signal": "genre_fit",   "value": 0.050, "because": "Shares rock and hard rock with Back in Black" }
+  ]
+}</code></pre>
+    <p>
+      Turn the top entry into a sentence in your UI: "Because you liked <em>Road bike</em>". Attributes marked
+      <code>sensitive</code> count in scoring and constraints but are never named in a reason. For platforms under the EU Digital
+      Services Act, an explanation like this plus the knob panel is the basis for the Article 27 duties: the main parameters
+      explained, and an option for the user to change them.
+    </p>
+
+    <h2 id="errors">Errors</h2>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Status</th><th><code>code</code></th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td>400</td><td><code>validation_error</code></td><td>Bad JSON, an unknown body field, an unknown knob or preset, a knob the recommender does not offer, a bad context value.</td></tr>
+        <tr><td>400</td><td><code>seed_mismatch</code></td><td>The wrong seed field for the recommender.</td></tr>
+        <tr><td>400</td><td><code>unknown_context_field</code></td><td>A <code>context</code> field the schema does not declare.</td></tr>
+        <tr><td>401</td><td><code>unauthorized</code></td><td>Missing or wrong key.</td></tr>
+        <tr><td>404</td><td><code>unknown_recommender</code></td><td>The schema has no such recommender. A schema that declares its own recommenders has no <code>default</code>.</td></tr>
+        <tr><td>404</td><td><code>unknown_recommendation</code>, <code>unknown_item</code></td><td>The <code>rec_id</code> expired, or the item was not in that list.</td></tr>
+        <tr><td>409</td><td><code>schema_missing</code></td><td>Nothing has been pushed yet.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="status">What is built</h2>
+    <div class="note">
+      <p>
+        <strong>Entities and interactions are stored in memory today, so they are lost when the engine restarts.</strong>
+        Recommend ranks from that store, which is built from the whole catalogue and suits catalogues of a few thousand items.
+        Neo4j persistence is the target design.
+      </p>
+    </div>
+    <p>Anything a schema asks for that the engine does not do yet is skipped, never fatal, and listed under <code>warnings</code> when you push.</p>
+    <ul>
+      <li><strong>Signals:</strong> <code>item_neighbors</code>, <code>co_occurrence</code>, <code>attribute_target</code>, <code>global_count</code>, <code>low_exposure</code>, <code>age_decay</code>, <code>context_match</code>, <code>provided</code>, <code>user_neighbors</code>, <code>proximity</code> and <code>embedding</code>.</li>
+      <li><strong>Candidate sources:</strong> <code>item_neighbors</code>, <code>co_occurrence</code>, <code>user_neighbors</code>, <code>factors</code>, <code>popular</code> and <code>fresh</code>. With none declared, every item of the type.</li>
+      <li><strong>Constraints:</strong> every form, including <code>within_km</code>, <code>interacted</code>, and operands from <code>$user</code>, <code>$context</code> and <code>$seed</code>.</li>
+      <li><strong>Rules:</strong> attribute quotas (<code>max</code> per <code>per</code> positions).</li>
+      <li><strong>Similarity metrics:</strong> <code>jaccard</code>, <code>cosine</code>, <code>equals</code>, <code>log_ratio</code> and <code>closeness</code>.</li>
+      <li><strong>Not yet:</strong> <code>trend</code>, <code>own_history</code>, <code>satiation</code>, <code>recurrence</code>, <code>formula</code>, <code>attribute_match</code>, <code>attribute_value</code>, <code>sequence</code>, <code>mutual_connections</code>, diversity re-ranking, <code>mix</code>, <code>group</code>, <code>reciprocal</code> (two-sided matching), and the <code>place</code>, <code>cap</code> and <code>pin</code> rules.</li>
+    </ul>
+
+    <h3>Instant re-rank</h3>
+    <p>
+      Everything that does not depend on weights (the candidates, the hard constraints, the similarities between candidates and
+      seed items, co-listing counts and taste profiles) is computed once and kept as a snapshot. Moving a knob changes only weights,
+      so the next request reuses the snapshot and only re-scores. Any write to the store starts a new snapshot, so nothing is ranked
+      from stale data.
+    </p>
+
+    <h3>Learned taste</h3>
+    <p>
+      The <code>embedding</code> signal learns item vectors from the interactions, in the background: call
+      <code>POST /v1/models/train</code>, or set <code>WALRUS_TRAIN_INTERVAL</code> (for example <code>15m</code>) to retrain on a
+      schedule. A user's own vector is solved from their history on every request, so what they did a minute ago counts at once;
+      items added after the last run score neutrally until the next one. Until the first run the signal scores every item alike.
+      After you change a training setting in the schema, <code>GET /v1/models</code> shows <code>retrain_pending</code> and the old
+      model keeps serving until you train again.
+    </p>
+
+    <div class="pager">
+      <a href="schema.html">&larr; What a schema is</a>
+      <a href="https://github.com/WalrusYours/WalrusCore">Source on GitHub &rarr;</a>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>WALRUS, a bachelor thesis project at the Technical University of Moldova.</span>
+    <span class="links">
+      <a href="https://github.com/WalrusYours/WalrusCore">Source</a>
+      <a href="https://github.com/WalrusYours/WalrusCore/releases">Releases</a>
+      <a href="https://github.com/WalrusYours">Organisation</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>

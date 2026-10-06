@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Schema · WALRUS docs</title>
+  <meta name="description" content="The WALRUS schema: one YAML file that declares entities, interactions, similarity, signals, knobs and constraints. Every key explained.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <link rel="canonical" href="https://walrusyours.github.io/docs/schema.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="WALRUS">
+  <meta property="og:title" content="Schema · WALRUS docs">
+  <meta property="og:description" content="One YAML file declares entities, interactions, signals, knobs and constraints. Every key explained.">
+  <meta property="og:url" content="https://walrusyours.github.io/docs/schema.html">
+  <meta property="og:image" content="https://walrusyours.github.io/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/walrus.png">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/walrus.png" alt="">WALRUS</a>
+    <nav class="site" aria-label="Main">
+      <a href="../#how">How it works</a>
+      <a href="../#why">Why</a>
+      <a class="keep" href="./" aria-current="page">Docs</a>
+      <a class="keep" href="https://github.com/WalrusYours/WalrusCore">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap docs">
+
+  <nav class="docs-nav" aria-label="Documentation">
+    <h4>Get started</h4>
+    <a href="./">Introduction and install</a>
+    <a href="./#quickstart">Quickstart</a>
+    <h4>Schema</h4>
+    <a href="schema.html" aria-current="page">What a schema is</a>
+    <a href="schema.html#entities">Entities</a>
+    <a href="schema.html#interactions">Interactions</a>
+    <a href="schema.html#similarity">Similarity</a>
+    <a href="schema.html#signals">Signals</a>
+    <a href="schema.html#knobs">Knobs and presets</a>
+    <a href="schema.html#constraints">Constraints</a>
+    <a href="schema.html#pushing">Pushing a schema</a>
+    <h4>API</h4>
+    <a href="api.html">Overview</a>
+    <a href="api.html#entities">Entities and events</a>
+    <a href="api.html#recommend">Recommend</a>
+    <a href="api.html#explain">Explain</a>
+    <a href="api.html#errors">Errors</a>
+    <a href="api.html#status">What is built</a>
+  </nav>
+
+  <main class="doc" id="top">
+
+    <p class="eyebrow">Schema</p>
+    <h1>What a schema is</h1>
+    <p class="lead">
+      The schema is a single YAML file, <code>schema.yml</code>, that tells WALRUS about your platform.
+      It is written once by your developers, kept in your own repository, and pushed to WALRUS.
+      WALRUS never reads your database and never fetches the file itself.
+    </p>
+
+    <h2 id="why">Why a schema</h2>
+    <ul>
+      <li><strong>One engine, any content.</strong> A shop, a music service and a news site have different data and different ideas of a good result. With a schema the same engine serves all of them, and adopting WALRUS is a push of a file: no code change, no rebuild, no database migration.</li>
+      <li><strong>A contract.</strong> WALRUS checks the schema before accepting it and reports every problem at once, so mistakes surface when you push, not when users see bad results. Unknown keys and undeclared attributes are rejected, which catches typos.</li>
+      <li><strong>Control with limits.</strong> The author decides what can be weighted. The end user decides how much, through the few knobs the author chose, and can never go outside the schema.</li>
+      <li><strong>Explanations for free.</strong> Every score is a sum of declared signals, so the breakdown that produced a ranking can explain it.</li>
+      <li><strong>Safe change over time.</strong> Every accepted schema is stored as a version. WALRUS says whether a change is additive (applies live) or breaking (stored data must be rebuilt) before anything changes.</li>
+    </ul>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>A schema has up to eight top-level keys. Only the first five are always needed.</p>
+<pre><code>version: 1
+entities:     { ... }   <span class="c"># what exists</span>
+interactions: { ... }   <span class="c"># what users do</span>
+similarity:   { ... }   <span class="c"># how things are compared</span>
+signals:      { ... }   <span class="c"># how a score is built</span>
+knobs:        [ ... ]   <span class="c"># what the end user can move</span>
+presets:      { ... }   <span class="c"># named knob positions</span>
+constraints:  [ ... ]   <span class="c"># hard rules</span>
+recommendable: post     <span class="c"># which entity is ranked</span></code></pre>
+    <p>
+      The parser rejects unknown keys, so a typo such as <code>halflife</code> is an error instead of a
+      silently ignored rule. Names you invent (entities, attributes, interactions, signals, knob ids,
+      presets) must match <code>^[a-z][a-z0-9_]*$</code>, because they end up in database labels and property names.
+    </p>
+    <p>
+      <code>version</code> is an integer of at least 1. It is the version of the schema language, not of your
+      schema; WALRUS numbers your pushes itself.
+    </p>
+
+    <h2 id="entities">entities</h2>
+    <p>
+      Declares what exists and which attributes you will send. Anything not declared is rejected at
+      ingest. An entity named <code>user</code> is required, because constraints and signals refer to <code>$user</code>.
+    </p>
+<pre><code>entities:
+  post:
+    key: id
+    attributes:
+      topic:      { type: categorical }
+      created_at: { type: timestamp }</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>key</code></td><td>The name of the id field, normally <code>id</code>. Required.</td></tr>
+        <tr><td><code>attributes</code></td><td>The fields you will send, each with a <code>type</code>.</td></tr>
+        <tr><td><code>type</code></td><td><code>categorical</code> (a small set of labels such as a topic), <code>string</code> (free text), <code>float</code>, <code>int</code>, <code>bool</code>, <code>timestamp</code>, <code>set</code> (a list of strings such as tags), <code>vector</code> (an embedding), <code>ref</code> (the id of another entity), <code>geo</code> (a point, sent as <code>{"lat": 47.01, "lon": 28.86}</code>).</td></tr>
+        <tr><td><code>of</code></td><td>For <code>set</code>: the element type, currently <code>string</code>.</td></tr>
+        <tr><td><code>entity</code></td><td>For <code>ref</code>: which entity it points to, for example <code>{ type: ref, entity: user }</code>.</td></tr>
+        <tr><td><code>dim</code></td><td>For <code>vector</code>: the number of dimensions.</td></tr>
+        <tr><td><code>range</code></td><td>For <code>float</code> and <code>int</code>: <code>[min, max]</code>, min below max. Values outside are rejected.</td></tr>
+        <tr><td><code>optional</code></td><td>The attribute may be missing. Every other attribute must be present.</td></tr>
+        <tr><td><code>sensitive</code></td><td>Counts in scoring and constraints but is never named in a reason.</td></tr>
+        <tr><td><code>computed</code></td><td>An expression over the entity's other attributes, evaluated at ingest, for example <code>"len(title)"</code>. You never send a computed attribute. Cycles are rejected.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="interactions">interactions</h2>
+    <p>
+      Turns events into weighted edges that fade over time. A <code>like</code> is a stronger statement than a
+      <code>view</code>; a <code>dislike</code> is a negative one.
+    </p>
+<pre><code>interactions:
+  view: { weight: 1.0, value: seconds, transform: log1p, half_life: 3d }
+  like: { weight: 4.0, half_life: 30d }</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>weight</code></td><td>How strongly the event counts. Negative means the user dislikes the target.</td></tr>
+        <tr><td><code>value</code></td><td>The name of a number your event carries (seconds viewed, fraction listened). Omit it for plain yes/no events. The number is sent as <code>value</code> on the event.</td></tr>
+        <tr><td><code>transform</code></td><td>Turns that number into a bounded contribution: <code>identity</code>, <code>log1p</code>, <code>sqrt</code>, <code>clamp</code>, or an expression in <code>v</code>, for example <code>"1 - min(v, 30) / 30"</code>. Needs <code>value</code>.</td></tr>
+        <tr><td><code>half_life</code></td><td>How long until an event counts half as much, for example <code>3d</code>. Omit it for no decay.</td></tr>
+        <tr><td><code>target</code></td><td>The entity the event points at, when it is not the recommendable one.</td></tr>
+        <tr><td><code>locked</code></td><td>An editing guard for the dashboard. It is not access control.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Durations use <code>s</code>, <code>m</code>, <code>h</code>, <code>d</code>, <code>w</code>.</p>
+
+    <h2 id="similarity">similarity</h2>
+    <p>
+      Defines how two items, or two users, are compared. It is a map from entity name to a list of terms;
+      the scores of the terms are combined using their weights. The neighbour signals read the result.
+    </p>
+<pre><code>similarity:
+  post:
+    - { on: topic, metric: equals,  weight: 0.5 }
+    - { on: tags,  metric: jaccard, weight: 0.5 }
+  user:
+    - { via: interactions, metric: cosine }</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>on</code></td><td>The attribute (or list of attributes) to compare.</td></tr>
+        <tr><td><code>via: interactions</code></td><td>Compare users by their interaction history instead of by attributes. Use it for <code>user</code>. A term uses <code>on</code> or <code>via</code>, never both.</td></tr>
+        <tr><td><code>metric</code></td><td><code>equals</code> (same value), <code>jaccard</code> (overlap of two sets), <code>cosine</code> (angle between vectors or number lists), <code>log_ratio</code> (closeness of two positive numbers such as prices), <code>closeness</code> (one number: one minus the gap as a share of the range, for a feature like energy).</td></tr>
+        <tr><td><code>weight</code></td><td>The term's share in the combined similarity. Must be above 0 for <code>on</code> terms.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="signals">signals</h2>
+    <p>
+      The named parts of a score. The score of an item for a user is the weighted sum of the signals, using
+      the current weights. The <code>type</code> picks a built-in behaviour and the other keys configure it.
+      <code>default</code> is the weight when the user has touched no knob.
+    </p>
+<pre><code>signals:
+  content: { type: item_neighbors, default: 0.5 }
+  recency: { type: age_decay, default: 0.3, on: created_at, half_life: 2d }</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Type</th><th>Rewards</th><th>Ranks today</th></tr></thead>
+      <tbody>
+        <tr><td><code>item_neighbors</code></td><td>Items similar to what the user already engaged with.</td><td>yes</td></tr>
+        <tr><td><code>user_neighbors</code></td><td>Items that users with a similar history engaged with.</td><td>yes</td></tr>
+        <tr><td><code>global_count</code></td><td>Popularity over a <code>window</code>, for example <code>7d</code>. Size, not speed.</td><td>yes</td></tr>
+        <tr><td><code>age_decay</code></td><td>Fresh items. Needs <code>on: &lt;timestamp attribute&gt;</code> and a <code>half_life</code>.</td><td>yes</td></tr>
+        <tr><td><code>low_exposure</code></td><td>Items few people have seen, for discovery.</td><td>yes</td></tr>
+        <tr><td><code>embedding</code></td><td>A taste the attributes do not capture, learned from who interacted with what. Needs training.</td><td>yes</td></tr>
+        <tr><td><code>co_occurrence</code>, <code>attribute_target</code>, <code>context_match</code>, <code>provided</code>, <code>proximity</code></td><td>Items that appear together in playlists or baskets; closeness to a target value; a match with the request's context; scores your platform supplies; nearer places.</td><td>yes</td></tr>
+        <tr><td><code>trend</code></td><td>Items whose recent engagement is well above their ordinary pace: acceleration, not size.</td><td>not yet</td></tr>
+        <tr><td><code>own_history</code></td><td>Items the user has seen before, without a hard exclusion.</td><td>not yet</td></tr>
+        <tr><td><code>attribute_match</code></td><td>Items whose attribute matches a user value, <code>against: "$user.&lt;attribute&gt;"</code>.</td><td>not yet</td></tr>
+        <tr><td><code>diversity_rerank</code></td><td>Spreads results over the values of an attribute so one author cannot fill the feed.</td><td>not yet</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      A signal the engine cannot score yet is skipped, never fatal, and the push lists it under
+      <code>warnings</code>. Using an existing signal type is only configuration. A brand-new type is code,
+      registered in the signal registry; that is the one thing a schema push cannot do.
+    </p>
+
+    <h2 id="knobs">knobs and presets</h2>
+    <p>
+      Knobs are the only controls the end user ever sees. Each one is a projection onto one or more signal
+      weights, so you decide what can be weighted and the user decides how much.
+    </p>
+<pre><code>knobs:
+  - id: explore
+    label: "Safe picks  &lt;-&gt;  Surprise me"
+    range: [0, 1]
+    maps: { exploration: "x", author_spread: "0.3 + 0.5 * x" }
+
+presets:
+  default:  { taste_vs_crowd: 0.5, explore: 0.2 }
+  discover: { explore: 0.9, taste_vs_crowd: 0.8 }</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td>A stable identifier, unique among knobs.</td></tr>
+        <tr><td><code>label</code></td><td>Plain-language text shown to users. Required. Write both ends of the slider.</td></tr>
+        <tr><td><code>range</code></td><td><code>[min, max]</code> of the slider, min below max.</td></tr>
+        <tr><td><code>maps</code></td><td>Where the knob acts. Each key is a signal id or a meta-parameter, each value an expression in <code>x</code>, the knob position.</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      The meta-parameter <code>interactions.half_life_scale</code> stretches or shrinks every half-life, which gives a
+      "this week versus all-time" knob: <code>maps: { interactions.half_life_scale: "lerp(0.2, 4, x)" }</code>.
+    </p>
+    <p>
+      Expressions use numbers, <code>x</code>, <code>+ - * /</code>, comparisons, <code>&amp;&amp; || !</code>, and the functions
+      <code>min</code>, <code>max</code>, <code>abs</code>, <code>round</code>, <code>sqrt</code>, <code>log1p</code>,
+      <code>clamp(x, lo, hi)</code>, <code>lerp(a, b, t)</code> and <code>if(cond, a, b)</code>. They are compiled once
+      when the schema loads, so moving a slider never parses anything. Division by zero gives 0.
+    </p>
+    <p>
+      A <strong>preset</strong> is a named set of knob positions the user can pick in one tap. It sets knobs, not signals,
+      and every value must lie inside the knob's range.
+    </p>
+
+    <h2 id="constraints">constraints</h2>
+    <p>
+      Hard rules, applied before scoring. They are never weighted, and no knob can override them. Each is a
+      <code>require</code> or an <code>exclude</code> with one condition:
+    </p>
+<pre><code>constraints:
+  - require: { attribute: status, equals: active }
+  - exclude: { interacted: [dislike] }
+  - exclude: { interacted: [skip], count_gte: 3, within: 30d }
+  - exclude: { attribute: seller_id, in: "$user.blocked_sellers" }
+  - require: { attribute: age, gte: "$user.min_age" }
+  - require: { attribute: location, within_km: 15, of: "$context.location" }</code></pre>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>require</code> / <code>exclude</code></td><td>Keep only items that match, or drop the items that match.</td></tr>
+        <tr><td><code>attribute</code></td><td>Test an attribute of the recommendable entity, with one of <code>equals</code>, <code>in</code>, <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>, <code>contains</code>. The right side may read <code>$user.&lt;attribute&gt;</code>, <code>$context.&lt;field&gt;</code> or <code>$seed.&lt;attribute&gt;</code>.</td></tr>
+        <tr><td><code>within_km</code>, <code>of</code></td><td>The attribute is a <code>geo</code> point at most this many kilometres from the place <code>of</code>.</td></tr>
+        <tr><td><code>interacted</code></td><td>Test the user's history instead: a list of interaction names. With <code>count_gte</code> and <code>within</code> to ask for a number of events in a period.</td></tr>
+        <tr><td><code>when</code></td><td>Apply the constraint only if this expression is true, for example <code>"$user.explicit_allowed == false"</code>.</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      A condition that reads something the request does not have (no seed items, a user attribute the user does not
+      have, a context field that was not sent) does not apply, so missing data never empties a list.
+      <code>recommendable</code> names the entity that is ranked; it can be left out when exactly one entity besides
+      <code>user</code> is declared.
+    </p>
+
+    <h2 id="more">Beyond the basics</h2>
+    <p>
+      The sections above are enough for a feed. A schema can also declare several <strong>recommenders</strong> with their own
+      seeds (an item, a playlist or basket, a session, a group), request <strong>context</strong>, business <strong>rules</strong>
+      such as per-seller caps, and <strong>computed</strong> attributes. The
+      <a href="https://github.com/WalrusYours/WalrusCore/tree/main/docs/schema/schema-examples">example schemas</a>
+      cover them: a marketplace, music streaming, a playlist recommender, news, jobs, courses, film, a social network, local places and dating.
+      Copy the closest one, rename the entities and attributes to match your data, and push it.
+    </p>
+
+    <h2 id="pushing">Pushing a schema</h2>
+    <p>The schema is pushed to WALRUS and never pulled. Every push goes through the same steps:</p>
+    <ol>
+      <li><strong>Parse.</strong> The YAML is decoded into typed structures. Unknown keys fail here, and so do an empty or malformed document and a body over the size limit.</li>
+      <li><strong>Validate.</strong> References and types are checked: every <code>ref</code> points at a declared entity, signal types and metrics exist, an <code>age_decay</code> signal points at a timestamp, every knob maps to a declared signal with a valid expression, presets stay inside knob ranges, constraints name real attributes and interactions. All problems come back together as a list of <code>{path, message}</code> with status 400.</li>
+      <li><strong>Diff.</strong> The new schema is compared with the active one. Adding things, or changing weights, labels, knobs, presets or similarity, is <em>additive</em> and applies live. Removing an entity, attribute, interaction or signal, or changing a type, is <em>breaking</em>. A breaking change without <code>?confirm_breaking=true</code> returns 409 with the diff and changes nothing. An identical schema creates no new version.</li>
+      <li><strong>Record.</strong> An accepted schema becomes the next version, stored with its number, a hash, the author, the time and the YAML. <code>GET /v1/schema</code> returns the active one and <code>GET /v1/schema/history</code> lists every version.</li>
+      <li><strong>Activate.</strong> It is compiled in memory (knob maps and transforms become functions) and replaces the old one atomically, so a request sees the old schema or the new one, never a mix.</li>
+    </ol>
+<pre><code>curl -X PUT -H "Authorization: Bearer $WALRUS_ADMIN_KEY" \
+     --data-binary @schema.yml "$WALRUS_URL/v1/schema?dry_run=true"   <span class="c"># check, change nothing</span>
+curl -X PUT -H "Authorization: Bearer $WALRUS_ADMIN_KEY" \
+     --data-binary @schema.yml "$WALRUS_URL/v1/schema"                <span class="c"># apply</span></code></pre>
+    <p>A push never needs a code change, a rebuild or a restart. Three ways to get the file there:</p>
+    <ul>
+      <li><strong>CI (recommended).</strong> Keep <code>schema.yml</code> in your repository. Run a dry run on every pull request as a gate and push for real on merge.</li>
+      <li><strong>Boot sync.</strong> Your backend pushes the schema at startup. An unchanged schema creates no new version, so this is safe on every start.</li>
+      <li><strong>Manual.</strong> <code>curl</code> or the dashboard, for experiments.</li>
+    </ul>
+    <p>After a breaking change, re-import the affected entities and events so stored data matches the new schema; the 409 response says what is required.</p>
+
+    <div class="pager">
+      <a href="./#quickstart">&larr; Quickstart</a>
+      <a href="api.html">API reference &rarr;</a>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>WALRUS, a bachelor thesis project at the Technical University of Moldova.</span>
+    <span class="links">
+      <a href="https://github.com/WalrusYours/WalrusCore">Source</a>
+      <a href="https://github.com/WalrusYours/WalrusCore/releases">Releases</a>
+      <a href="https://github.com/WalrusYours">Organisation</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>

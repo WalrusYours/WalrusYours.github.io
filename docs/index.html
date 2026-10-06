@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Get started · WALRUS docs</title>
+  <meta name="description" content="Install WALRUS, push a schema, send entities and events, and get a ranked, explained feed back in a few minutes.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <link rel="canonical" href="https://walrusyours.github.io/docs/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="WALRUS">
+  <meta property="og:title" content="Get started · WALRUS docs">
+  <meta property="og:description" content="Install WALRUS, push a schema, send entities and events, and get a ranked, explained feed back.">
+  <meta property="og:url" content="https://walrusyours.github.io/docs/">
+  <meta property="og:image" content="https://walrusyours.github.io/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/walrus.png">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/walrus.png" alt="">WALRUS</a>
+    <nav class="site" aria-label="Main">
+      <a href="../#how">How it works</a>
+      <a href="../#why">Why</a>
+      <a class="keep" href="./" aria-current="page">Docs</a>
+      <a class="keep" href="https://github.com/WalrusYours/WalrusCore">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap docs">
+
+  <nav class="docs-nav" aria-label="Documentation">
+    <h4>Get started</h4>
+    <a href="./" aria-current="page">Introduction and install</a>
+    <a href="./#quickstart">Quickstart</a>
+    <h4>Schema</h4>
+    <a href="schema.html">What a schema is</a>
+    <a href="schema.html#entities">Entities</a>
+    <a href="schema.html#interactions">Interactions</a>
+    <a href="schema.html#similarity">Similarity</a>
+    <a href="schema.html#signals">Signals</a>
+    <a href="schema.html#knobs">Knobs and presets</a>
+    <a href="schema.html#constraints">Constraints</a>
+    <a href="schema.html#pushing">Pushing a schema</a>
+    <h4>API</h4>
+    <a href="api.html">Overview</a>
+    <a href="api.html#entities">Entities and events</a>
+    <a href="api.html#recommend">Recommend</a>
+    <a href="api.html#explain">Explain</a>
+    <a href="api.html#errors">Errors</a>
+    <a href="api.html#status">What is built</a>
+  </nav>
+
+  <main class="doc" id="top">
+
+    <p class="eyebrow">Get started</p>
+    <h1>Introduction</h1>
+    <p class="lead">
+      WALRUS is a recommendation engine you adapt to your platform with one YAML file.
+      You describe your data and how a good result is scored; end users get a few knobs to
+      re-weight the ranking, and every result comes with the reasons it was shown.
+    </p>
+
+    <h2 id="how-it-works">How it fits together</h2>
+    <p>
+      WALRUS runs next to your backend, as its own service. It never reads your database:
+      you push it a schema, then entities and events, and ask it for ranked lists.
+    </p>
+    <pre><code><span class="c"># your end-user client never talks to WALRUS</span>
+client  -&gt;  your app server  -&gt;  WALRUS  -&gt;  Neo4j
+                  |                  ^
+                  +-- schema, entities, events, recommend requests</code></pre>
+    <ul>
+      <li><strong>The platform decides what can be weighted.</strong> The schema declares the signals a score is built from, their default weights and the few knobs users may move.</li>
+      <li><strong>The user decides how much.</strong> A knob is a projection onto signal weights. The user can never reach outside what the schema allows.</li>
+      <li><strong>Hard rules come first.</strong> Constraints filter candidates before scoring and no knob can override them.</li>
+      <li><strong>Re-ranking is instant.</strong> Candidates and similarities do not depend on weights, so they are computed once and kept. Moving a slider only re-scores.</li>
+      <li><strong>Every result is explainable.</strong> A score is a sum of declared signals, so the breakdown that produced it is the explanation.</li>
+    </ul>
+    <p>Your servers call WALRUS with an API key. Keep the key on your backend: an end-user client calls your backend, never WALRUS.</p>
+
+    <h2 id="install">Install</h2>
+    <p>
+      You need Docker with the Compose plugin. One command installs Neo4j, the engine and the
+      admin dashboard, generates the admin key and the database password, and waits until they are healthy:
+    </p>
+    <pre><code>curl -fsSL https://raw.githubusercontent.com/WalrusYours/WalrusCore/main/install.sh | bash</code></pre>
+    <p>
+      It installs into <code>/opt/walrus</code> (as root) or <code>~/walrus</code>, prints the admin key
+      once, and serves the dashboard on <code>http://127.0.0.1:3001</code>. That address is loopback
+      only: put a reverse proxy or an SSH tunnel in front of it. Run the command again to upgrade; it
+      keeps your <code>.env</code> and pulls the newest images.
+    </p>
+    <p>
+      To do it by hand, copy <code>docker-compose.yml</code> and <code>.env.example</code> (as <code>.env</code>)
+      from the <a href="https://github.com/WalrusYours/WalrusCore">repository</a> and run
+      <code>docker compose up -d</code>.
+    </p>
+
+    <div class="table-scroll"><table>
+      <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>WALRUS_ADMIN_KEY</code></td><td>The key for every API call and the dashboard sign-in. The engine refuses to start without one.</td></tr>
+        <tr><td><code>NEO4J_PASSWORD</code></td><td>The database password, at least 8 characters. Applied when the volume is first created.</td></tr>
+        <tr><td><code>WALRUS_PORT</code></td><td>The engine's port, <code>8080</code> by default, bound to <code>127.0.0.1</code> unless you set <code>WALRUS_BIND</code>.</td></tr>
+        <tr><td><code>WALRUS_TRAIN_INTERVAL</code></td><td>Optional. Retrain learned models on a schedule, for example <code>15m</code>.</td></tr>
+        <tr><td><code>WALRUS_INSTANCE_NAME</code></td><td>Optional. A name shown on <code>/health</code> and in the dashboard.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note">
+      <p><strong>Development defaults are public.</strong> Without a <code>.env</code> Compose uses a well-known key and password so it starts with no setup. Set your own for anything that is not a local try-out.</p>
+    </div>
+
+    <p>Check that it is up. Health is the one endpoint that needs no key:</p>
+    <pre><code>curl http://127.0.0.1:8080/health
+{"instance_id":"f6f1595e...","instance_name":"walrus","status":"ok","version":"0.0.0-dev"}</code></pre>
+
+    <h2 id="quickstart">Quickstart</h2>
+    <p>
+      Five calls take you from an empty engine to a ranked, explained feed. The example is a small
+      social feed of posts. Set these once; every call below uses them:
+    </p>
+    <pre><code>export WALRUS_URL=http://127.0.0.1:8080
+export WALRUS_ADMIN_KEY=&lt;the key the installer printed&gt;</code></pre>
+
+    <h3 id="qs-schema">1. Push a schema</h3>
+    <p>Save this as <code>schema.yml</code>. It is a complete, valid schema, and the next page explains every key in it.</p>
+    <pre><code>version: 1
+
+entities:
+  user:
+    key: id
+    attributes:
+      interests: { type: set, of: string, optional: true }
+  post:
+    key: id
+    attributes:
+      topic:      { type: categorical }
+      tags:       { type: set, of: string }
+      created_at: { type: timestamp }
+      status:     { type: categorical }
+
+interactions:
+  view: { weight: 1.0, value: seconds, transform: log1p, half_life: 3d }
+  like: { weight: 4.0, half_life: 30d }
+
+similarity:
+  post:
+    - { on: topic, metric: equals,  weight: 0.5 }
+    - { on: tags,  metric: jaccard, weight: 0.5 }
+
+signals:
+  content:     { type: item_neighbors, default: 0.6 }
+  popularity:  { type: global_count,   default: 0.2, window: 7d }
+  recency:     { type: age_decay,      default: 0.3, on: created_at, half_life: 2d }
+  exploration: { type: low_exposure,   default: 0.1 }
+
+knobs:
+  - id: explore
+    label: "Safe picks  &lt;-&gt;  Surprise me"
+    range: [0, 1]
+    maps: { exploration: "x", content: "1 - 0.5 * x" }
+
+presets:
+  default: { explore: 0.2 }
+
+constraints:
+  - require: { attribute: status, equals: active }
+
+recommendable: post</code></pre>
+    <p>Check it first with a dry run, which reports every problem and the diff without changing anything, then push it for real:</p>
+    <pre><code>curl -X PUT -H "Authorization: Bearer $WALRUS_ADMIN_KEY" \
+     --data-binary @schema.yml "$WALRUS_URL/v1/schema?dry_run=true"
+
+curl -X PUT -H "Authorization: Bearer $WALRUS_ADMIN_KEY" \
+     --data-binary @schema.yml "$WALRUS_URL/v1/schema"
+<span class="c"># {"ok":true,"errors":[],"diff":{"verdict":"additive",...},"version":1,"message":"applied as version 1"}</span></code></pre>
+
+    <h3 id="qs-entities">2. Send entities</h3>
+    <p>Users and posts, in one batch. Each one is checked against the schema.</p>
+    <pre><code>curl -X POST -H "Authorization: Bearer $WALRUS_ADMIN_KEY" "$WALRUS_URL/v1/entities" -d '{"entities":[
+  {"entity":"user","id":"u_1","attributes":{}},
+  {"entity":"post","id":"p_1","attributes":{"topic":"cycling","tags":["road","gear"],"created_at":"2026-10-05T09:00:00Z","status":"active"}},
+  {"entity":"post","id":"p_2","attributes":{"topic":"cycling","tags":["road","race"],"created_at":"2026-10-06T08:00:00Z","status":"active"}},
+  {"entity":"post","id":"p_3","attributes":{"topic":"cooking","tags":["pasta"],"created_at":"2026-10-06T07:00:00Z","status":"active"}}
+]}'
+<span class="c"># {"accepted":4,"rejected":[]}</span></code></pre>
+
+    <h3 id="qs-events">3. Send events</h3>
+    <p>
+      What the user did. The <code>value</code> is the number the event carries, here the seconds
+      viewed, which the schema's <code>transform</code> turns into a bounded contribution.
+      Send the time the event happened, not the time you send it: decay is computed from it.
+    </p>
+    <pre><code>curl -X POST -H "Authorization: Bearer $WALRUS_ADMIN_KEY" "$WALRUS_URL/v1/interactions" -d '{"interactions":[
+  {"user":"u_1","type":"like","target":"p_1","ts":"2026-10-05T10:00:00Z"},
+  {"user":"u_1","type":"view","target":"p_1","ts":"2026-10-05T09:58:00Z","value":42}
+]}'
+<span class="c"># {"accepted":2,"rejected":[]}</span></code></pre>
+
+    <h3 id="qs-recommend">4. Recommend, and move a knob</h3>
+    <p>
+      Ask for a list for the user. Then ask again with the knob at each end. Only the weights
+      change, so the second call reuses everything else and re-scores.
+    </p>
+    <pre><code>curl -H "Authorization: Bearer $WALRUS_ADMIN_KEY" "$WALRUS_URL/v1/recommend/u_1?limit=3&amp;knobs.explore=0"
+<span class="c"># items: p_1 1.20, p_2 0.97, p_3 0.28    weights: content 1, exploration 0</span>
+
+curl -H "Authorization: Bearer $WALRUS_ADMIN_KEY" "$WALRUS_URL/v1/recommend/u_1?limit=3&amp;knobs.explore=1"
+<span class="c"># items: p_2 1.63, p_3 1.28, p_1 0.70    weights: content 0.5, exploration 1</span></code></pre>
+    <p>The response also carries the final <code>weights</code> that were applied and a <code>rec_id</code>:</p>
+    <pre><code>{
+  "recommender": "default",
+  "rec_id": "rec_c4b5e035cc18cf19",
+  "items": [
+    { "id": "p_2", "type": "post", "score": 1.5 },
+    { "id": "p_3", "type": "post", "score": 1.085 },
+    { "id": "p_1", "type": "post", "score": 0.8 }
+  ],
+  "weights": { "content": 0.6, "exploration": 0.8, "popularity": 0.2, "recency": 0.3 },
+  "knobs": { "explore": 0.8 },
+  "candidates_considered": 3,
+  "took_ms": 0
+}</code></pre>
+    <p>Your app turns the ids into posts from its own database and renders them. Add <code>"explain": true</code> to a POST body to get a one-line <code>reason</code> on every item.</p>
+
+    <h3 id="qs-explain">5. Explain an item</h3>
+    <p>Why is <code>p_2</code> first? Ask about that exact list by its <code>rec_id</code>. It is kept for one minute.</p>
+    <pre><code>curl -H "Authorization: Bearer $WALRUS_ADMIN_KEY" "$WALRUS_URL/v1/recommendations/rec_c4b5e035cc18cf19/explain/p_2"</code></pre>
+    <pre><code>{
+  "item": "p_2", "position": 1, "score": 1.5,
+  "breakdown": [
+    { "signal": "exploration", "value": 0.8, "because": "Nobody has played or added it yet" },
+    { "signal": "content",     "value": 0.4, "because": "Same topic as p_1" },
+    { "signal": "recency",     "value": 0.3, "because": "Released in 2026" },
+    { "signal": "popularity",  "value": 0 }
+  ],
+  "weights_used": { "content": 0.6, "exploration": 0.8, "popularity": 0.2, "recency": 0.3 }
+}</code></pre>
+    <p>The values add up to the score. The explanation is the computation, not a story told afterwards.</p>
+
+    <h3>Where next</h3>
+    <ul>
+      <li>Fit it to your data: <a href="schema.html">what a schema is</a> and every key in it, or copy the closest of the <a href="https://github.com/WalrusYours/WalrusCore/tree/main/docs/schema/schema-examples">thirteen example schemas</a>.</li>
+      <li>Wire it into your backend: the <a href="api.html">API reference</a>.</li>
+    </ul>
+
+    <div class="pager">
+      <span></span>
+      <a href="schema.html">What a schema is &rarr;</a>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>WALRUS, a bachelor thesis project at the Technical University of Moldova.</span>
+    <span class="links">
+      <a href="https://github.com/WalrusYours/WalrusCore">Source</a>
+      <a href="https://github.com/WalrusYours/WalrusCore/releases">Releases</a>
+      <a href="https://github.com/WalrusYours">Organisation</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>

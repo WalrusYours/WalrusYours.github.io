@@ -4,7 +4,8 @@ A static site (plain HTML and CSS, no build) for GitHub Pages.
 
 ```
 index.html   the page
-style.css    near-black minimal theme
+docs/        the documentation, served at /docs/: index.html (get started), schema.html, api.html
+style.css    near-black minimal theme, shared by the page and the docs
 assets/      logo, favicon, og.png (social card)
 og/og.html   source of assets/og.png; regenerate with headless Chrome (command inside)
 .nojekyll    tell Pages not to run Jekyll
